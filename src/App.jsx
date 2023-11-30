@@ -1,6 +1,6 @@
 import Note from '../components/Note'
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import noteService from './services/notes'
 
 const App = () => {
   const [notes, setNotes] = useState([])
@@ -9,14 +9,9 @@ const App = () => {
 
   const hook = () => {
     console.log('In effect')
-
-    axios.get('http://localhost:3001/notes')
-        .then(response => {
-          console.log('Notes retrieved.')
-          setNotes(response.data)
-        })
-        .catch(error =>{
-          console.log(error)
+    noteService.getAll()
+        .then(initialNotes => {
+          setNotes(initialNotes)
         })
   }
 
@@ -30,13 +25,11 @@ const App = () => {
       important: Math.random() < 0.5
     }
 
-    axios.post('http://localhost:3001/notes', noteObj)
-      .then(response => {
-        console.log(response)
-        setNotes(notes.concat(response.data))
+    noteService.create(noteObj)
+      .then(createdNote => {
+        setNotes(notes.concat(createdNote))
         setNewNote('')
       })
-    
   }
 
   const handleNoteChange = (event) => {
@@ -51,22 +44,20 @@ const notesToShow = showAll
 
 const toggleImportance = (id) => {
   console.log('toggle importance of id:', id)
-  const url = `http://localhost:3001/notes/${id}`
   const note = notes.find(note => note.id === id)
   const changedNote = {...note, important: !note.important}
 
-  axios.put(url, changedNote)
-    .then(response => {
-      setNotes(notes.map(note => note.id !== id ? 
-        note : response.data))
-    })
+  noteService.update(id, changedNote)
+    .then(returnedNote =>
+      setNotes(notes.map(note => note.id !== id ?
+        note : returnedNote)))
 }
   return(
     <div>
       <h1>Notes</h1>
       <ul>
         {notesToShow.map(note =>
-          <Note 
+          <Note
           key={note.id} 
           note={note}
           toggleImportance={() => toggleImportance(note.id)}/>)}  
