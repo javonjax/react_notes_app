@@ -1,14 +1,18 @@
 import Note from '../components/Note'
+import Notification from '../components/Notification'
+import Footer from '../components/Footer'
 import { useState, useEffect } from 'react'
 import noteService from './services/notes'
+
 
 const App = () => {
   const [notes, setNotes] = useState([])
   const [newNote, setNewNote] = useState('Enter a new note...')
   const [showAll, setShowAll] = useState(true)
+  const [errorMessage, setErrorMessage] = useState(null)
 
   const hook = () => {
-    console.log('In effect')
+    console.log('Effect rendered')
     noteService.getAll()
         .then(initialNotes => {
           setNotes(initialNotes)
@@ -48,13 +52,25 @@ const toggleImportance = (id) => {
   const changedNote = {...note, important: !note.important}
 
   noteService.update(id, changedNote)
-    .then(returnedNote =>
+    .then(returnedNote => {
       setNotes(notes.map(note => note.id !== id ?
-        note : returnedNote)))
+        note : returnedNote))
+    })
+    .catch(error => {
+      setErrorMessage(
+        `Note ${note.id} has already been removed from the server`
+      )
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000)
+      setNotes(notes.filter(note => note.id !== id))
+    })
+      
 }
   return(
     <div>
       <h1>Notes</h1>
+      <Notification message={errorMessage}/>
       <ul>
         {notesToShow.map(note =>
           <Note
@@ -72,6 +88,7 @@ const toggleImportance = (id) => {
           onChange={handleNoteChange}/>
         <button type='submit'>Save</button>
       </form>
+      <Footer/>
     </div>
   )
 }
